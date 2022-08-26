@@ -35,7 +35,7 @@ resource "kubernetes_cluster_role_binding" "cluster-admin-binding" {
   }
   subject {
     kind      = "User"
-    name      = "${var.email}"
+    name      = var.email
     api_group = "rbac.authorization.k8s.io"
   }
   subject {
@@ -58,6 +58,7 @@ resource "helm_release" "elastic" {
 
   repository       = "https://helm.elastic.co"
   chart            = "eck-operator"
+  version          = "2.4.0"
   namespace        = "elastic-system"
   create_namespace = "true"
 
@@ -65,51 +66,70 @@ resource "helm_release" "elastic" {
 
 }
 
-# Delay of 30s to wait until ECK operator is up and running
+# Delay of 5m to wait until ECK operator is up and running
 resource "time_sleep" "wait_30_seconds" {
   depends_on = [helm_release.elastic]
 
   create_duration = "30s"
 }
 
-# Create Elasticsearch manifest
-resource "kubectl_manifest" "elastic_quickstart" {
-    yaml_body = <<YAML
-apiVersion: elasticsearch.k8s.elastic.co/v1
-kind: Elasticsearch
-metadata:
-  name: quickstart
-spec:
-  version: 8.1.3
-  nodeSets:
-  - name: default
-    count: 3
-    config:
-      node.store.allow_mmap: false
-YAML
+resource "time_sleep" "wait_for_trial" {
+  depends_on = [kubernetes_secret_v1.start_trial]
 
-  provisioner "local-exec" {
-     command = "sleep 60"
-  }
-  depends_on = [helm_release.elastic, time_sleep.wait_30_seconds]
+  create_duration = "30s"
 }
 
-# Create Kibana manifest
-resource "kubectl_manifest" "kibana_quickstart" {
-    yaml_body = <<YAML
-apiVersion: kibana.k8s.elastic.co/v1
-kind: Kibana
-metadata:
-  name: quickstart
-spec:
-  version: 8.1.3
-  count: 1
-  elasticsearchRef:
-    name: quickstart
-YAML
+resource "time_sleep" "wait_for_license" {
+  depends_on = [kubernetes_secret_v1.enterprise_license]
 
-  provisioner "local-exec" {
-     command = "sleep 60"
+  create_duration = "30s"
+}
+
+resource "helm_release" "elastic_quickstart" {
+  name = "quickstart"
+
+  repository       = "https://helm.elastic.co"
+  chart            = "eck-stack"
+  namespace        = "elastic-stack"
+  create_namespace = "true"
+
+  values = [
+    file("${path.module}/quickstart-values.yaml")
+  ]
+
+  depends_on = [helm_release.elastic, time_sleep.wait_30_seconds, time_sleep.wait_for_trial, time_sleep.wait_for_license]
+
+}
+
+# We need to start an Enterprise trial or the helm release of Elastic stack will fail: https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-licensing.html
+resource "kubernetes_secret_v1" "start_trial" {
+  count = var.enable_enterprise ? 1 : 0
+  metadata {
+    name      = "eck-trial-license"
+    namespace = "elastic-system"
+    labels = {
+      "license.k8s.elastic.co/type" = "enterprise_trial"
+    }
+    annotations = {
+      "elastic.co/eula" = "accepted"
+    }
   }
-  depends_on = [helm_release.elastic, kubectl_manifest.elastic_quickstart]
+
+  depends_on = [helm_release.elastic]
+
+}
+
+resource "kubernetes_secret_v1" "enterprise_license" {
+  count = var.enable_enterprise ? 0 : 1
+  metadata {
+    name      = "eck-license"
+    namespace = "elastic-system"
+    labels = {
+      "license.k8s.elastic.co/scope" = "operator"
+    }
+  }
+  data = {
+    "license" = var.enterprise_license
+  }
+  depends_on = [helm_release.elastic]
 }

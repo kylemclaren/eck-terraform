@@ -4,9 +4,9 @@ output "gke_name" {
 }
 
 output "kubernetes_name" {
-  value       = "${var.kubernetes_name}"
+  value = var.kubernetes_name
 }
 
 output "kibana_endpoint" {
-  value       = "${var.kibana_endpoint}"
+  value = var.kibana_endpoint
 }
