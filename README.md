@@ -46,6 +46,9 @@ Once you are ready, you just need to run:
 `terraform apply -parallelism=1`
 
 It will apply your changes in sequence.
+
+We are using the Elastic Stack Helm Charts to deploy our Elasticsearch and Kibana resources. [ECK Stack Helm Charts](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-stack-helm-chart.html) are currently being released as an Enterprise licensed feature. When you run `terraform apply`, you will have the option to either [start a new Enterprise subscription trial](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-licensing.html#k8s-start-trial), or add your existing Enterprise license.
+
 Once everything was applied, you will get an output similar to this,
 
 ```
@@ -54,11 +57,9 @@ Apply complete! Resources: 7 added, 0 changed, 0 destroyed.
 Outputs:
 
 gke_name = "TO CONNECT TO KUBERNETES: gcloud container clusters get-credentials <KUBERNETES-NAME> --region europe-west1 --project <YOUR-PROJECT-NAME>"
-kibana_endpoint = "TO CONNECT TO KIBANA: kubectl port-forward svc/<KIBANA-ENDPOINT> 5601:5601"
+kibana_endpoint = "TO CONNECT TO KIBANA: echo 'https://'$(kubectl get svc --namespace elastic-stack quickstart-kb-http --output jsonpath='{.status.loadBalancer.ingress[0].ip}')':5601'"
 kubernetes_name = "fram-gke-eck"
 ```
-
-Once you `port-foward` your kibana service, you can easily access it on your browser via localhost.
 
 ## Wrapping up
 Now, to clean up everything you just need to run
