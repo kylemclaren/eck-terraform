@@ -129,7 +129,7 @@ resource "kubernetes_secret_v1" "enterprise_license" {
     }
   }
   data = {
-    "license" = var.enterprise_license
+    "license" = "${file("${path.module}/license.json")}"
   }
   depends_on = [helm_release.elastic]
 }

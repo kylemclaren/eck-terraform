@@ -23,11 +23,6 @@ variable "enable_enterprise" {
   description = "Do you want to start a 30-day Enterprise trial? Type `true` to activate the trial or `false` if you would like add your own Enterprise license. By selecting 'true', you are expressing that you have accepted the Elastic EULA which can be found at https://www.elastic.co/eula"
 }
 
-variable "enterprise_license" {
-  type        = string
-  description = "Please, enter your (base64-encoded) Enterprise license. Leave blank if not applicable"
-}
-
 variable "kibana_endpoint" {
   description = "Kibana endpoint"
   type        = string
