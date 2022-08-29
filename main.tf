@@ -66,19 +66,21 @@ resource "helm_release" "elastic" {
 
 }
 
-# Delay of 5m to wait until ECK operator is up and running
+# Delay of 30s to wait until ECK operator is up and running
 resource "time_sleep" "wait_30_seconds" {
   depends_on = [helm_release.elastic]
 
   create_duration = "30s"
 }
 
+# Delay of 30s to wait until trial is applied, else Helm will fail
 resource "time_sleep" "wait_for_trial" {
   depends_on = [kubernetes_secret_v1.start_trial]
 
   create_duration = "30s"
 }
 
+# Delay of 30s to wait until licence is applied, else Helm will fail
 resource "time_sleep" "wait_for_license" {
   depends_on = [kubernetes_secret_v1.enterprise_license]
 
@@ -119,6 +121,7 @@ resource "kubernetes_secret_v1" "start_trial" {
 
 }
 
+# Here, we have the option to provide a full Enterprise license in the form of a `license.json` file in the root of the repo.
 resource "kubernetes_secret_v1" "enterprise_license" {
   count = var.enable_enterprise ? 0 : 1
   metadata {
