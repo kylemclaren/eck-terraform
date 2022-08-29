@@ -12,7 +12,7 @@ _Every feature will be deployed via terraform_
 - It will contain 1 node pool with 3 nodes (One in each zone) running on region **europe-west1**
 - It contains a helm provider that will be responsible to install the ECK operator
 - Elasticsearch cluster with 3 nodes
-- One Kibana instance
+- One Kibana instance with Load Balancer
 
 ## Requirements
 Before starting you should have the following commands installed:
@@ -23,6 +23,8 @@ Before starting you should have the following commands installed:
 ## Let's play
 As you probably know, terraform is an infrastructure as code tool, which means we can describe our infrastructure desire into a file and apply it via terraform.
 Here, we are going to spin up a GKE cluster with 3 nodes running on europe-west1 region, the machines we are going to use is **e2-standard-4** which will give us 4vCPU nad 16GB of memory in each node.
+
+> **Note* We are using the Elastic Stack Helm Charts to deploy our Elasticsearch and Kibana resources. [ECK Stack Helm Charts](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-stack-helm-chart.html) are currently being released as an Enterprise licensed feature. When you run `terraform apply`, you will have the option to [start a new Enterprise subscription trial](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-licensing.html#k8s-start-trial) by typing `true`. If you have your own Enterprise license, you need to add it to the to the project root as a `license.json` file. Then, when asked if you'd like to start a trial, type `false`.
 
 First, you have to authenticate into Google Cloud console, to so run the following command,
 
@@ -46,8 +48,6 @@ Once you are ready, you just need to run:
 `terraform apply -parallelism=1`
 
 It will apply your changes in sequence.
-
-We are using the Elastic Stack Helm Charts to deploy our Elasticsearch and Kibana resources. [ECK Stack Helm Charts](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-stack-helm-chart.html) are currently being released as an Enterprise licensed feature. When you run `terraform apply`, you will have the option to either [start a new Enterprise subscription trial](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-licensing.html#k8s-start-trial), or add your existing Enterprise license.
 
 Once everything was applied, you will get an output similar to this,
 
